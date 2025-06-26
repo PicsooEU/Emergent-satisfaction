@@ -181,8 +181,41 @@ const ReviewForm = ({ onSubmitSuccess }) => {
   );
 };
 
-// Statistics Display Component
+// Statistics Display Component with Charts
 const StatsDisplay = ({ stats }) => {
+  const [weeklyStats, setWeeklyStats] = useState({});
+  const [monthlyStats, setMonthlyStats] = useState({});
+  const [viewType, setViewType] = useState('overview');
+
+  useEffect(() => {
+    fetchWeeklyStats();
+    fetchMonthlyStats();
+  }, []);
+
+  const fetchWeeklyStats = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stats/weekly`);
+      if (response.ok) {
+        const data = await response.json();
+        setWeeklyStats(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques hebdomadaires:', error);
+    }
+  };
+
+  const fetchMonthlyStats = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stats/monthly`);
+      if (response.ok) {
+        const data = await response.json();
+        setMonthlyStats(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques mensuelles:', error);
+    }
+  };
+
   if (!stats || stats.total_reviews === 0) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-6 text-center">
@@ -190,6 +223,115 @@ const StatsDisplay = ({ stats }) => {
       </div>
     );
   }
+
+  // Pie chart data for overall ratings
+  const pieChartData = {
+    labels: ['Support client', 'Qualité produit', 'Fonctionnalités', 'Rapport qualité/prix'],
+    datasets: [
+      {
+        data: [stats.avg_support, stats.avg_quality, stats.avg_features, stats.avg_value],
+        backgroundColor: [
+          '#3B82F6', // Blue
+          '#10B981', // Green
+          '#8B5CF6', // Purple
+          '#F59E0B', // Orange
+        ],
+        borderColor: [
+          '#2563EB',
+          '#059669',
+          '#7C3AED',
+          '#D97706',
+        ],
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+      },
+      title: {
+        display: true,
+        text: 'Répartition des notes par catégorie',
+        font: {
+          size: 16,
+          weight: 'bold',
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${context.label}: ${context.parsed.toFixed(2)}/5`;
+          }
+        }
+      }
+    },
+  };
+
+  // Prepare weekly chart data
+  const weeklyLabels = Object.keys(weeklyStats).sort();
+  const weeklyChartData = {
+    labels: weeklyLabels.map(date => {
+      const d = new Date(date);
+      return `Semaine du ${d.toLocaleDateString('fr-FR')}`;
+    }),
+    datasets: [
+      {
+        label: 'Nombre d\'avis',
+        data: weeklyLabels.map(week => weeklyStats[week]?.total_reviews || 0),
+        backgroundColor: '#3B82F6',
+        borderColor: '#2563EB',
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  // Prepare monthly chart data
+  const monthlyLabels = Object.keys(monthlyStats).sort();
+  const monthlyChartData = {
+    labels: monthlyLabels.map(month => {
+      const [year, monthNum] = month.split('-');
+      const date = new Date(year, monthNum - 1);
+      return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
+    }),
+    datasets: [
+      {
+        label: 'Nombre d\'avis',
+        data: monthlyLabels.map(month => monthlyStats[month]?.total_reviews || 0),
+        backgroundColor: '#10B981',
+        borderColor: '#059669',
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: viewType === 'weekly' ? 'Évolution hebdomadaire' : 'Évolution mensuelle',
+        font: {
+          size: 16,
+          weight: 'bold',
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+      },
+    },
+  };
 
   const categories = [
     { key: 'avg_support', label: 'Support client', color: 'bg-blue-500' },
@@ -199,36 +341,155 @@ const StatsDisplay = ({ stats }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Statistiques</h3>
-      
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-lg font-medium">Note globale</span>
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-yellow-500">{stats.avg_overall}</span>
-            <span className="text-yellow-400 text-xl">★</span>
-          </div>
+    <div className="space-y-6">
+      {/* Navigation */}
+      <div className="bg-white rounded-lg shadow-lg p-4">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setViewType('overview')}
+            className={`px-4 py-2 rounded-md font-medium ${
+              viewType === 'overview'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Vue d'ensemble
+          </button>
+          <button
+            onClick={() => setViewType('weekly')}
+            className={`px-4 py-2 rounded-md font-medium ${
+              viewType === 'weekly'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Statistiques hebdomadaires
+          </button>
+          <button
+            onClick={() => setViewType('monthly')}
+            className={`px-4 py-2 rounded-md font-medium ${
+              viewType === 'monthly'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Statistiques mensuelles
+          </button>
         </div>
-        <p className="text-sm text-gray-600">Basé sur {stats.total_reviews} avis</p>
       </div>
 
-      <div className="space-y-4">
-        {categories.map(category => (
-          <div key={category.key}>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-gray-700">{category.label}</span>
-              <span className="text-sm font-bold">{stats[category.key]}/5</span>
+      {viewType === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Overall Statistics */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Statistiques générales</h3>
+            
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-lg font-medium">Note globale</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-3xl font-bold text-yellow-500">{stats.avg_overall}</span>
+                  <span className="text-yellow-400 text-2xl">★</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">Basé sur {stats.total_reviews} avis</p>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${category.color}`}
-                style={{ width: `${(stats[category.key] / 5) * 100}%` }}
-              ></div>
+
+            <div className="space-y-4">
+              {categories.map(category => (
+                <div key={category.key}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium text-gray-700">{category.label}</span>
+                    <span className="text-sm font-bold">{stats[category.key]}/5</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full ${category.color} transition-all duration-700 ease-out`}
+                      style={{ width: `${(stats[category.key] / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* Pie Chart */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="h-80">
+              <Pie data={pieChartData} options={pieChartOptions} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewType === 'weekly' && (
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="h-80 mb-4">
+            <Bar data={weeklyChartData} options={barChartOptions} />
+          </div>
+          
+          {weeklyLabels.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold mb-4">Détails par semaine</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {weeklyLabels.slice(-6).map(week => {
+                  const weekData = weeklyStats[week];
+                  const date = new Date(week);
+                  return (
+                    <div key={week} className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-medium mb-2">
+                        Semaine du {date.toLocaleDateString('fr-FR')}
+                      </h5>
+                      <div className="space-y-1 text-sm">
+                        <div>Avis: {weekData.total_reviews}</div>
+                        <div>Note globale: {weekData.avg_overall}/5</div>
+                        <div className="text-xs text-gray-600">
+                          Support: {weekData.avg_support} | Qualité: {weekData.avg_quality}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {viewType === 'monthly' && (
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="h-80 mb-4">
+            <Bar data={monthlyChartData} options={barChartOptions} />
+          </div>
+          
+          {monthlyLabels.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold mb-4">Détails par mois</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {monthlyLabels.slice(-6).map(month => {
+                  const monthData = monthlyStats[month];
+                  const [year, monthNum] = month.split('-');
+                  const date = new Date(year, monthNum - 1);
+                  return (
+                    <div key={month} className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-medium mb-2">
+                        {date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
+                      </h5>
+                      <div className="space-y-1 text-sm">
+                        <div>Avis: {monthData.total_reviews}</div>
+                        <div>Note globale: {monthData.avg_overall}/5</div>
+                        <div className="text-xs text-gray-600">
+                          Support: {monthData.avg_support} | Qualité: {monthData.avg_quality}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
