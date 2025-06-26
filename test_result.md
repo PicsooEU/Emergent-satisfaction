@@ -107,63 +107,78 @@ user_problem_statement: "Créer une application de gestion des appréciations su
 backend:
   - task: "API endpoints for review submission"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created POST /api/reviews endpoint for submitting reviews with 4 rating categories"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested POST /api/reviews endpoint. The endpoint correctly accepts valid reviews with all 4 ratings (support, quality, features, value) with and without comments. Validation works correctly for missing required fields."
 
   - task: "API endpoints for review retrieval and filtering"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created GET /api/reviews with status filtering for moderation"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested GET /api/reviews endpoint. The endpoint correctly retrieves all reviews and supports filtering by status (pending, approved, rejected). Limit parameter also works as expected."
 
   - task: "Statistics calculation endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created /api/stats, /api/stats/weekly, /api/stats/monthly endpoints for analytics"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested all statistics endpoints. GET /api/stats returns correct overall statistics for approved reviews. GET /api/stats/weekly and GET /api/stats/monthly correctly group and calculate statistics by time period."
 
   - task: "Review moderation endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created PUT /api/reviews/{id}/status for approve/reject moderation"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested PUT /api/reviews/{id}/status endpoint. The endpoint correctly updates review status to approved/rejected/pending. Error handling works for invalid status values and non-existent reviews."
 
   - task: "CSV export functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Created GET /api/export endpoint to generate CSV data for approved reviews"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested GET /api/export endpoint. The endpoint correctly generates CSV data for approved reviews with proper formatting for French headers and content."
 
 frontend:
   - task: "Star rating component"
